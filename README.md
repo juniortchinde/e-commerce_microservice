@@ -35,8 +35,7 @@ lancez le serveur avec : "node server.js"
 * Gestion des produits 
 * Commandes -Paiement -Livraison
 
-
-    4) Structure du projet
+         4) Structure du projet
 
 /e-commerce_microservice 
 
@@ -50,3 +49,27 @@ lancez le serveur avec : "node server.js"
 * │── README.md
 * │── package.json 
 * │── server.js
+
+
+📌 Installation de RabbitMQ sur Windows
+RabbitMQ nécessite Erlang pour fonctionner. Voici les étapes d’installation :
+
+1️⃣ Installer Erlang
+Télécharge et installe Erlang depuis le site officiel :
+👉 https://www.erlang.org/downloads
+Ajoute le chemin d’installation d’Erlang aux variables d’environnement (Path).
+
+2️⃣ Installer RabbitMQ
+Télécharge RabbitMQ depuis le site officiel :
+👉 https://www.rabbitmq.com/download.html
+Installe-le en suivant l’assistant d’installation.
+
+3️⃣ Vérifier l’installation
+Ouvre PowerShell en mode admin et exécute :
+
+rabbitmqctl status
+
+Si tout est bien installé, tu verras les informations du serveur RabbitMQ.
+
+si rabbitmq n'est pas reconnu ajouter aux variables d'environment
+
