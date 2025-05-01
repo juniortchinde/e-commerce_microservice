@@ -21,7 +21,6 @@ const orderSchema = mongoose.Schema({
             phone: { type: String, required: true },
             address: { type: String, required: true },
         },
-        required: true
     },
 
     amount: {type: Number, required: true},

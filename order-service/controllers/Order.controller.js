@@ -1,38 +1,42 @@
 const Order = require('../models/Order.model');
-const messageBroker = require('../message_broker/rabbitmq');
+const messageBroker = require('../rabbitmq');
 
 
 module.exports.createOrder = async (req, res) => {
     try {
-        const {orderProductList, address} = req.body.orderProductList;
+        const {orderProductList} = req.body;
+        const userId = req.headers['x-user-id'];
 
         // On récupere les détails des produits via le message broker
+
         const productListInfo = await messageBroker.productDataClient(orderProductList);
 
-        if(typeof productListInfo === 'string') {
+        if (typeof productListInfo === 'string') {
             return res.status(400).send({message: productListInfo})
         }
 
-
         let amount = 0;
-        for(let i = 0; i < productListInfo.length; i++){
+        for (let i = 0; i < productListInfo.length; i++) {
             amount += productListInfo[i].price * productListInfo[i].quantity;
         }
+        console.log(amount)
 
-        //
-
-        if (i < productList.length) {
-            return res.status(401).send({ error: true, message : "Not enough products" });
-        }
-
-        await Order.create({
-            userId: req.auth.userId,
-            productList: productList,
-            destination: destination,
+        const newOrder = new Order({
+            userId,
+            productList: productListInfo,
             amount: amount,
-            state: "committed"
+            state: "waiting_payment"
         })
-        res.status(201).json({error: false, message: "Order committed and waiting of shipping." });
+        res.status(201).json({
+            succes: true,
+            message: "votre commande à été passée avec succéss vous pouvez consulter son état d'avancement"
+        });
+
+        await messageBroker.emitPayemenData({
+            userId,
+            amount,
+            orderId: newOrder._id,
+        })
     }
 
     catch(err){
@@ -56,8 +60,8 @@ module.exports.getOrders = async (req, res) => {
                 message : "No orders currently"
             })
         }
+        res.status(200).json({ error: false, orders});
 
-        return res.status(200).json({ error: false, orders});
     }
     catch (error) {
         console.error(error);

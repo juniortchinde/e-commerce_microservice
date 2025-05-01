@@ -44,10 +44,4 @@ server.on('listening', () =>{
     console.log('Listenning on port '+ bind);
 })
 
-const connectRabbitMQ = require('./message_broker/rabbitmq');
-(async () => {
-  const { connection, channel } = await connectRabbitMQ();
-})();
-
-
 server.listen(port)

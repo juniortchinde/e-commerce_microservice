@@ -23,19 +23,21 @@ cd e-commerce_microservice
 
 Installez les dépendances avec  "npm install"
 
-    2) Utilisation
+      2) Utilisation
 
 Pour exécuter l'application : "npm start"
 
 lancez le serveur avec : "node server.js"
 
-    3) Services
+      3) Services
 
 * Authentificaton 
 * Gestion des produits 
-* Commandes -Paiement -Livraison
+* Commandes 
+* Paiement 
+* Livraison
 
-         4) Structure du projet
+      4) Structure du projet
 
 /e-commerce_microservice 
 

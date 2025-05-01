@@ -5,7 +5,7 @@ async function productDataClient(orderProductList) {
     const queue = "product_rpc_queue";
     const correlationId = uuidv4();
     const timeoutDuration = 5000; // Timeout de sécurité en ms
-
+    console.log(orderProductList)
     try {
 
         const connection = await amqp.connect(process.env.MESSAGE_BROKER_URL);
@@ -14,7 +14,7 @@ async function productDataClient(orderProductList) {
         const { queue: replyQueue } = await channel.assertQueue('', { exclusive: true });
 
         return await new Promise((resolve, reject) => {
-            // si pas de réponse dans lae temps impartie on ferme la connexion
+            // si pas de réponse dans le temps impartie on ferme la connexion
             const timeout = setTimeout(() => {
                 channel.close(); // fermeture du canl
                 connection.close(); // fermeture de la connexion
@@ -54,5 +54,32 @@ async function productDataClient(orderProductList) {
     }
 }
 
+async function emitPayemenData(paymentData) {
+    try{
+        const connection = await amqp.connect(process.env.MESSAGE_BROKER_URL);
+        const channel = await connection.createChannel();
+        // création de l'echange
+        const exchange = "payment_exchange";
+        // key de routage vers le service de payment
+        const routingKey = "payment_routing_key";
 
-module.exports = {productDataClient};
+        await channel.assertExchange(exchange, 'direct', {
+            durable: false
+        });
+        // envoie du message vers le service
+        await channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(paymentData)));
+
+        console.log("[x] Message envoyé vers payment_exchange");
+         // fermer lea comnexion après l'envoie du message
+        setTimeout(() => {
+            channel.close();
+            connection.close();
+        }, 500);
+
+    }
+    catch(err){
+        console.log(err)
+        throw err;
+    }
+}
+module.exports = {productDataClient, emitPayemenData};
