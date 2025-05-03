@@ -1,4 +1,5 @@
 const amqp = require('amqplib');
+const orderService = require("./service/Order.service");
 const { v4: uuidv4 } = require('uuid');
 
 async function productDataClient(orderProductList) {
@@ -54,13 +55,12 @@ async function productDataClient(orderProductList) {
     }
 }
 
-async function emitPayemenData(paymentData) {
+async function emitPaymentData(paymentData) {
     try{
         const connection = await amqp.connect(process.env.MESSAGE_BROKER_URL);
         const channel = await connection.createChannel();
-        // création de l'echange
+
         const exchange = "payment_exchange";
-        // key de routage vers le service de payment
         const routingKey = "payment_routing_key";
 
         await channel.assertExchange(exchange, 'direct', {
@@ -82,4 +82,47 @@ async function emitPayemenData(paymentData) {
         throw err;
     }
 }
-module.exports = {productDataClient, emitPayemenData};
+
+
+
+// recevoir les informations de reponse du service de payment
+async function receivePaymentResponseData() {
+    try {
+        const connection = await amqp.connect(process.env.MESSAGE_BROKER_URL);
+        const channel = await connection.createChannel();
+        const exchange = "payment_response_exchange";
+
+        await channel.assertExchange(exchange, "direct", {durable: false});
+
+        const queue = await channel.assertQueue("",{
+            exclusive: true
+        })
+        const routingKey = "payment_response_routing_key";
+
+        await channel.bindQueue(queue.queue, exchange, routingKey);
+
+        console.log(' [*] Waiting for messages in %s', exchange);
+
+
+        channel.consume(queue.queue, async (msg) => {
+            console.log(" [x] Received %s", msg.content.toString());
+            try{
+                const paymentResponseData = JSON.parse(msg.content.toString());
+                console.log(" [x] Received:", paymentResponseData);
+                await orderService.updateOrderState(paymentResponseData);
+            }
+            catch (err) {
+                console.error(" [!] Error processing message:", err);
+                // Optionally reject and requeue message:
+                channel.nack(msg, false, false); // or true to requeue
+            }
+        }, {noAck: true});
+
+    } catch (err) {
+        console.error(err);
+        throw err
+    }
+}
+
+
+module.exports = {productDataClient, emitPaymentData, receivePaymentResponseData};

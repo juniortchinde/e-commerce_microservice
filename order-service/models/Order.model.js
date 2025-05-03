@@ -4,13 +4,7 @@ const orderSchema = mongoose.Schema({
     userId: {type: mongoose.Schema.Types.ObjectId,  required: true, ref: 'users'},
 
     productList: {
-        type: [
-        {
-            _id: false,
-            productId: { type: mongoose.Schema.Types.ObjectId, ref: 'product' },
-            quantity : {type: Number, required: true},
-
-        }],
+        type: [Object],
         required: true
     },
 
@@ -24,7 +18,11 @@ const orderSchema = mongoose.Schema({
     },
 
     amount: {type: Number, required: true},
-    state: {type: String, required: true},
+    state: {
+        type:String,
+        enum: ['waiting_payment', 'paid', 'shipping', 'delivered', 'payment_failed1'],
+        default: 'waiting_payment',
+        required: true},
 },
     {
         timestamps: true

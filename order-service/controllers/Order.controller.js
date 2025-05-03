@@ -19,7 +19,7 @@ module.exports.createOrder = async (req, res) => {
         for (let i = 0; i < productListInfo.length; i++) {
             amount += productListInfo[i].price * productListInfo[i].quantity;
         }
-        console.log(amount)
+        console.log(productListInfo)
 
         const newOrder = new Order({
             userId,
@@ -27,12 +27,15 @@ module.exports.createOrder = async (req, res) => {
             amount: amount,
             state: "waiting_payment"
         })
+
+        await newOrder.save()
+
         res.status(201).json({
-            succes: true,
+            success: true,
             message: "votre commande à été passée avec succéss vous pouvez consulter son état d'avancement"
         });
 
-        await messageBroker.emitPayemenData({
+        await messageBroker.emitPaymentData({
             userId,
             amount,
             orderId: newOrder._id,
@@ -44,6 +47,9 @@ module.exports.createOrder = async (req, res) => {
         return res.status(400).json({error: err.message})
     }
 }
+
+
+
 
 module.exports.getOrders = async (req, res) => {
     try {

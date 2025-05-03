@@ -1,5 +1,6 @@
 const http = require('http');
 const app = require('./app');
+const {receivePaymentResponseData} = require("./rabbitmq");
 
 const normalizePort = (val) =>{
     const port = parseInt(val, 10);
@@ -42,6 +43,7 @@ server.on('listening', () =>{
     const address = server.address();
     const bind = typeof address === 'string'? 'pipe ' +address : 'port ' + port;
     console.log('Listenning on port '+ bind);
+    receivePaymentResponseData()
 })
 
 server.listen(port)

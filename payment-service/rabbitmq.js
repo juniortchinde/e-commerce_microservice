@@ -1,8 +1,6 @@
 const amqp = require('amqplib');
 const paymentService = require('./services/Payment.service');
 
-let paymentResponse = {}
-let paymentError = {}
 
 async function receivePaymentData() {
     try {
@@ -21,14 +19,14 @@ async function receivePaymentData() {
 
         console.log(' [*] Waiting for messages in %s', exchange);
 
-        let paymentData = {}
 
         channel.consume(queue.queue, async (msg) => {
             console.log(" [x] Received %s", msg.content.toString());
             try{
-                paymentData = JSON.parse(msg.content.toString());
+                const paymentData = JSON.parse(msg.content.toString());
                 console.log(" [x] Received:", paymentData);
-                paymentResponse = await paymentService.payment(paymentData);
+                const paymentResponse = await paymentService.payment(paymentData);
+                await emitPaymentValidationData(paymentResponse);
                 console.log(" [✓] Payment processed:", paymentResponse);
             }
             catch (err) {
@@ -39,6 +37,24 @@ async function receivePaymentData() {
         }, {noAck: true});
 
     } catch (err) {
+        console.error(err);
+        throw err
+    }
+}
+
+async function emitPaymentValidationData(paymentResponseData){
+    try {
+        const connection = await amqp.connect(process.env.MESSAGE_BROKER_URL);
+        const channel = await connection.createChannel();
+
+        const exchange = "payment_response_exchange";
+        const routingKey = "payment_response_routing_key";
+
+        await channel.assertExchange(exchange, "direct", {durable: false});
+
+        await channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(paymentResponseData)))
+    }
+    catch (err) {
         console.error(err);
         throw err
     }
