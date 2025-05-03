@@ -1,5 +1,4 @@
 const UserBalance = require("../models/UserBalance.model");
-const {priceOrderData} = require("../rabbitmq")
 
 module.exports.payment = async (paymentData) => {
     try{
@@ -46,3 +45,5 @@ module.exports.payment = async (paymentData) => {
     }
 
 }
+
+
