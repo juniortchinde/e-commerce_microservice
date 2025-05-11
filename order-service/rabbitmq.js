@@ -109,7 +109,15 @@ async function receivePaymentResponseData() {
             try{
                 const paymentResponseData = JSON.parse(msg.content.toString());
                 console.log(" [x] Received:", paymentResponseData);
-                await orderService.updateOrderState(paymentResponseData);
+                const orderResponse = await orderService.updateOrderState(paymentResponseData);
+                // si le payment reusit et que la commande est MAJ avec succès on envoie les informations de la commande
+                if(orderResponse.success){
+                    console.log(" [x] Order validated:", orderResponse.order)
+                    await emitOrderData(orderResponse.order);
+                }
+                else{
+                    console.log(" [x] Order failed")
+                }
             }
             catch (err) {
                 console.error(" [!] Error processing message:", err);
@@ -123,6 +131,37 @@ async function receivePaymentResponseData() {
         throw err
     }
 }
+
+// emmettre les informations de la commande pour les services Delivery et Product pour
+// reserver les produits et commencer la livraison'
+async function emitOrderData(order) {
+    try{
+        const connection = await amqp.connect(process.env.MESSAGE_BROKER_URL);
+        const channel = await connection.createChannel();
+
+        const exchange = "order_validate_exchange";
+        const routingKey = "order_validate_routing_key";
+
+        await channel.assertExchange(exchange, 'direct', {
+            durable: false
+        });
+        // envoie du message vers le service
+        await channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(order)));
+
+        console.log("[x] Message envoyé vers order_validate_exchange");
+        // fermer lea comnexion après l'envoie du message
+        setTimeout(() => {
+            channel.close();
+            connection.close();
+        }, 500);
+
+    }
+    catch(err){
+        console.log(err)
+        throw err;
+    }
+}
+
 
 
 module.exports = {productDataClient, emitPaymentData, receivePaymentResponseData};

@@ -1,6 +1,6 @@
 const Products = require("./models/Product.model");
 const amqp = require('amqplib');
-const productInfo = require("./utils/productInfoFetchData");
+const {productInfo, updateProductForOrder} = require("./utils/productInfoFetchData");
 
 async function productDataServer() {
     try {
@@ -48,4 +48,41 @@ async function productDataServer() {
 }
 
 
-module.exports = {productDataServer};
+
+async function receiveOrderData() {
+    try {
+        const connection = await amqp.connect(process.env.MESSAGE_BROKER_URL);
+        const channel = await connection.createChannel();
+        const exchange = "order_validate_exchange";
+        const routingKey = "order_validate_routing_key";
+
+        await channel.assertExchange(exchange, "direct", {durable: false});
+
+        const queue = await channel.assertQueue("",{
+            exclusive: true
+        })
+
+        await channel.bindQueue(queue.queue, exchange, routingKey);
+
+        console.log(' [*] Waiting for messages in %s', exchange);
+
+
+        channel.consume(queue.queue, async (msg) => {
+            const order = JSON.parse(msg.content.toString());
+            try{
+                console.log(" [x] Received:", order );
+                await updateProductForOrder(order.productList)
+            }
+            catch (err) {
+                console.error(" [!] Error processing message:", err);
+                // todo roll back
+            }
+        }, {noAck: true});
+
+    } catch (err) {
+        console.error(err);
+        throw err
+    }
+}
+
+module.exports = {productDataServer,  receiveOrderData};

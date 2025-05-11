@@ -44,6 +44,7 @@ server.on('listening', () =>{
     const bind = typeof address === 'string'? 'pipe ' +address : 'port ' + port;
     console.log('Listenning on port '+ bind);
     rabbitmq.productDataServer();
+    rabbitmq.receiveOrderData();
 })
 
 server.listen(port)

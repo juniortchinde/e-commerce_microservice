@@ -1,5 +1,5 @@
 const Products = require("../models/Product.model");
-const {models} = require("mongoose");
+
 const productInfo = async (orderProductList) =>{
     try {
         const productList = []
@@ -27,6 +27,7 @@ const productInfo = async (orderProductList) =>{
 
                 //on récupère les infos du produit
                 productList.push({
+                    _id: product._id,
                     title: product.title,
                     quantity: orderProductList[i].quantity,
                     price: product.price,
@@ -56,4 +57,21 @@ const productInfo = async (orderProductList) =>{
     }
 }
 
-module.exports = productInfo;
+async  function updateProductForOrder(productList){
+    try{
+        for(let i = 0; i < productList.length; i++){
+            const product = productList[i];
+            const _id = product._id;
+            const productToUpdate = await Products.findOne({_id});
+            console.log(productToUpdate);
+            const newQuantity = productToUpdate.quantity - product.quantity;
+            await Products.updateOne({_id}, {quantity: newQuantity});
+        }
+    }
+    catch(err){
+        console.error(err);
+    }
+}
+
+
+module.exports = {productInfo,  updateProductForOrder};
