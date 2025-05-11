@@ -7,12 +7,19 @@ async function updateOrderState(paymentResponseData){
         console.log(paymentResponseData)
 
         if(!success){
-          // todo roll back
+          //echec de paiement
            await Order.findByIdAndUpdate(orderId, {state: "payment_failed"});
+           return {
+               success: false,
+               message: "Paiement échoué"
+           }
         }
         else{
             const order = await Order.findByIdAndUpdate(orderId, {state: "paid"}).select("_id userId productList");
-            console.log(order)
+            return {
+                success: true,
+                order: order,
+            }
         }
 
     }
